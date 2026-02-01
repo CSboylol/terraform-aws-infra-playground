@@ -81,7 +81,12 @@ resource "aws_security_group" "sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] # Lab-only: restrict in real usage
   }
-
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Lab-only
+  }
   egress {
     from_port   = 0
     to_port     = 0
@@ -89,6 +94,7 @@ resource "aws_security_group" "sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 resource "aws_instance" "vm" {
   ami           = "ami-0c02fb55956c7d316"
   instance_type = "t2.micro"
@@ -99,13 +105,17 @@ resource "aws_instance" "vm" {
     aws_security_group.sg.id
   ]
 
+  key_name = aws_key_pair.lab103.key_name
+
   tags = {
     Name = "labs-vm"
   }
+
   lifecycle {
     create_before_destroy = true
   }
 }
+
 
 resource "null_resource" "check_public_ip" {
   provisioner "local-exec" {
@@ -138,3 +148,7 @@ output "vm_public_ip" {
   ]
 }
 
+output "welcome_url" {
+  value       = "http://${aws_instance.vm.public_ip}/welcome.html"
+  description = "Welcome page URL (may be blocked if port 80 is closed)"
+}
